@@ -16,6 +16,7 @@
 #include "rviz_rendering/objects/covariance_visual.hpp"
 #include "rviz_common/message_filter_display.hpp"
 #include "rviz_rendering/objects/billboard_line.hpp"
+#include "rviz_rendering/objects/movable_text.hpp"
 
 
 namespace rviz_rendering
@@ -84,18 +85,7 @@ private Q_SLOTS:
   void updatePathDiameter();
   void updateTrajectoryStyle();
   void updateTrajectoryBufferLength();
-
-
-
-
-  // void updateShapeChoice();
-
   void updateShapeVisibility();
-
-  // void updateColorAndAlpha();
-
-  // void updateArrowsGeometry();
-
   void updateAxisGeometry();
 
 private:
@@ -115,6 +105,7 @@ private:
 
     std::vector<Ogre::ManualObject *> manual_objects_;
     std::vector<rviz_rendering::BillboardLine *> billboard_lines_;
+    rviz_rendering::MovableText* object_label_;
 
     size_t messages_received_ = 0u;
 
@@ -159,8 +150,12 @@ private:
   rviz_common::properties::BoolProperty* show_trajectory_property_;
   rviz_common::properties::CovarianceProperty * show_covariance_property_;
   rviz_common::properties::BoolProperty* show_velocity_property_;
-  rviz_common::properties::BoolProperty* show_object_label_property_;
   rviz_common::properties::BoolProperty* show_only_last_pose_property_;
+
+  // object label propertires
+  rviz_common::properties::BoolProperty* show_object_label_property_;
+  // rviz_common::properties::FloatProperty* object_label_z_offset_;
+
    
   // trajectoy (if shown) properties
   rviz_common::properties::IntProperty * keep_property_;

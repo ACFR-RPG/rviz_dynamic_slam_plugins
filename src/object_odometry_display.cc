@@ -42,7 +42,7 @@ ObjectOdometryDisplay::~ObjectOdometryDisplay() {
 
 void ObjectOdometryDisplay::setupProperties() {
   show_trajectory_property_ = new rviz_common::properties::BoolProperty(
-    "Show Trajectory", true,
+    "Trajectory", true,
     "Whether or not to show the trajectory of all objects.",
     this, SLOT(updateShowTrajectory()), this);
 
@@ -64,14 +64,14 @@ void ObjectOdometryDisplay::setupProperties() {
   style_property_ = new rviz_common::properties::EnumProperty(
     "Line Style", "Billboards",
     "The rendering operation to use to draw the grid lines.",
-    this, SLOT(updateTrajectoryStyle()));
+    show_trajectory_property_, SLOT(updateTrajectoryStyle()), this);
   style_property_->addOption("Lines", LINES);
   style_property_->addOption("Billboards", BILLBOARDS);
 
   buffer_length_property_ = new rviz_common::properties::IntProperty(
     "Buffer Length", 1,
     "Number of paths to display.",
-    this, SLOT(updateTrajectoryBufferLength()));
+    show_trajectory_property_, SLOT(updateTrajectoryBufferLength()), this);
   buffer_length_property_->setMin(1);
 
 
@@ -87,8 +87,8 @@ void ObjectOdometryDisplay::setupProperties() {
   keep_property_->setMin(0);
 
   path_diameter_property_ = new rviz_common::properties::FloatProperty(
-    "Trajectory Diameter", 0.2, "Diamter (m) of the object paths.",
-    this, SLOT(updatePathDiameter()), this);
+    "Diameter", 0.2, "Diamter (m) of the object paths.",
+    show_trajectory_property_, SLOT(updatePathDiameter()), this);
   path_diameter_property_->setMin(0.001f);
   // path_diameter_property_->hide();
 
@@ -220,7 +220,10 @@ void ObjectOdometryDisplay::updateShowPoses() {
 }
 
 void ObjectOdometryDisplay::updateShowObjectLabel() {
-  bool selectable = show_object_label_property_->getBool();
+  bool show_label = show_object_label_property_->getBool();
+  for(auto&[_, meta_data] : object_data_) {
+      if(meta_data.object_label_) meta_data.object_label_->setVisible(show_label);
+    }
 }
 
 void ObjectOdometryDisplay::updatePathDiameter() {
@@ -271,7 +274,6 @@ void ObjectOdometryDisplay::updateAxisGeometry() {
 void ObjectOdometryDisplay::updateTrajectoryBufferLength()
 {
   // Destroy all path objects
-  std::cout << "updateTrajectoryBufferLength called" << std::endl;
   destroyTrajectoryObjects();
 
   // // Destroy all axes and arrows
@@ -312,6 +314,10 @@ void ObjectOdometryDisplay::addObjectData(
   dynamic_slam_interfaces::msg::ObjectOdometry::ConstSharedPtr msg)
 {
   int object_label = msg->object_id;
+
+  auto msg_colour = msg->colour;
+  Ogre::ColourValue colour(msg_colour.r, msg_colour.g, msg_colour.b, 1);
+
   if (object_data_.find(object_label) == object_data_.end()) {
     auto buffer_length = static_cast<size_t>(buffer_length_property_->getInt());
     auto style = static_cast<LineStyle>(style_property_->getOptionInt());
@@ -319,8 +325,17 @@ void ObjectOdometryDisplay::addObjectData(
     ObjectMetaData new_object_data;
     //must allocate memory for new object when it is created!!
     allocateTrajectoryBuffer(new_object_data, buffer_length, style);
+
+    const std::string label = "Object " + std::to_string(msg->object_id);
+    new_object_data.object_label_ = new rviz_rendering::MovableText(label);
+    scene_node_->attachObject(new_object_data.object_label_);
+    new_object_data.object_label_->setVisible(show_object_label_property_->getBool());
+    new_object_data.object_label_->setTextAlignment(
+      rviz_rendering::MovableText::H_CENTER, rviz_rendering::MovableText::V_CENTER);
+    new_object_data.object_label_->setColor(colour);
     object_data_.emplace(object_label, std::move(new_object_data));
   }
+
 
   ObjectMetaData& object_meta_data = object_data_.at(object_label);
   size_t buffer_index = object_meta_data.messages_received_ % buffer_length_property_->getInt();
@@ -351,8 +366,6 @@ void ObjectOdometryDisplay::addObjectData(
       billboard_line->setMaxPointsPerLine(static_cast<uint32_t>(object_meta_data.axes_.size()));
       billboard_line->setLineWidth(path_diameter_property_->getFloat());
 
-      auto msg_colour = msg->colour;
-      Ogre::ColourValue colour(msg_colour.r, msg_colour.g, msg_colour.b, 1);
       // std::cout << colour.r << " " <<  colour.g << " " << colour.b << " " << colour.a << std::endl;
 
       for (const auto& axes : object_meta_data.axes_) {
@@ -362,6 +375,10 @@ void ObjectOdometryDisplay::addObjectData(
       }
       break;
   }
+
+  //update text location
+  auto xpos = object_meta_data.axes_.back()->getPosition();
+  object_meta_data.object_label_->setGlobalTranslation(xpos);
 
   updateShowPoses();
   updateShowTrajectory();
