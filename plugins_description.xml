@@ -1,0 +1,12 @@
+<library path="rviz_dynamic_slam_plugins">
+  <class
+    name="rviz_dynamic_slam_plugins/ObjectOdometry"
+    type="rviz_dynamic_slam_plugins::ObjectOdometryDisplay"
+    base_class_type="rviz_common::Display"
+  >
+  <description>
+      Displays from dynamic_slam_interfaces/ObjectOdometry message
+    </description>
+    <message_type>dynamic_slam_interfaces/msg/ObjectOdometry</message_type>
+  </class>
+</library>
