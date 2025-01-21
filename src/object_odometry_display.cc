@@ -37,7 +37,8 @@ ObjectOdometryDisplay::ObjectOdometryDisplay()
 }
 
 ObjectOdometryDisplay::~ObjectOdometryDisplay() {
-  destroyTrajectoryObjects();
+  reset();
+  // destroyTrajectoryObjects();
 }
 
 void ObjectOdometryDisplay::setupProperties() {
@@ -112,8 +113,8 @@ void ObjectOdometryDisplay::onInitialize() {
 
 void ObjectOdometryDisplay::reset() {
   MFDClass::reset();
-  updateTrajectoryBufferLength();
   clear();
+  // updateTrajectoryBufferLength();
 }
 
 void ObjectOdometryDisplay::update(float wall_dt, float ros_dt) {
@@ -165,6 +166,7 @@ void ObjectOdometryDisplay::onEnable() {
 
 
 void ObjectOdometryDisplay::clear() {
+  destroyTrajectoryObjects();
   object_data_.clear();
 
 }
@@ -303,6 +305,11 @@ void ObjectOdometryDisplay::destroyTrajectoryObjects() {
       delete billboard_line;  // also destroys the corresponding scene node
     }
     object_meta_data.billboard_lines_.clear();
+
+    if(object_meta_data.object_label_) {
+      object_meta_data.scene_node->detachObject(object_meta_data.object_label_);
+      delete object_meta_data.object_label_;
+    }
   };
 
   for(auto&[_, object_meta_data] : object_data_) { destroy_per_object(object_meta_data); }
@@ -323,12 +330,18 @@ void ObjectOdometryDisplay::addObjectData(
     auto style = static_cast<LineStyle>(style_property_->getOptionInt());
     //new object
     ObjectMetaData new_object_data;
+
+    new_object_data.scene_node = scene_node_->createChildSceneNode();
     //must allocate memory for new object when it is created!!
     allocateTrajectoryBuffer(new_object_data, buffer_length, style);
 
     const std::string label = "Object " + std::to_string(msg->object_id);
     new_object_data.object_label_ = new rviz_rendering::MovableText(label);
-    scene_node_->attachObject(new_object_data.object_label_);
+
+    //attach object to object scene scene node
+    new_object_data.scene_node->attachObject(new_object_data.object_label_);
+    //update frames local position relative to the 
+
     new_object_data.object_label_->setVisible(show_object_label_property_->getBool());
     new_object_data.object_label_->setTextAlignment(
       rviz_rendering::MovableText::H_CENTER, rviz_rendering::MovableText::V_CENTER);
@@ -377,8 +390,8 @@ void ObjectOdometryDisplay::addObjectData(
   }
 
   //update text location
-  auto xpos = object_meta_data.axes_.back()->getPosition();
-  object_meta_data.object_label_->setGlobalTranslation(xpos);
+  // auto xpos = object_meta_data.axes_.back()->getPosition();
+  object_meta_data.scene_node->setPosition(position);
 
   updateShowPoses();
   updateShowTrajectory();

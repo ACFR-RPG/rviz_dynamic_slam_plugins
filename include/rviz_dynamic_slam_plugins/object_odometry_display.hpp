@@ -99,7 +99,12 @@ private:
 
   struct ObjectMetaData {
     //TODO: what if non adjacent temporal data?
+
+
     //make temporal data struct internal
+
+    //currentrly scene node not being descroyed!! (should be detroyed from the scene manager!!)
+    Ogre::SceneNode* scene_node;
     std::deque<std::unique_ptr<rviz_rendering::Axes>> axes_;
     std::deque<std::unique_ptr<rviz_rendering::CovarianceVisual>> covariances_;
 
