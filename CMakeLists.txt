@@ -76,6 +76,7 @@ find_package(tf2_ros REQUIRED)
 
 set(rviz_dynamic_slam_plugins_headers_to_moc
   include/rviz_dynamic_slam_plugins/object_odometry_display.hpp
+  include/rviz_dynamic_slam_plugins/object_odometry_path_display.hpp
 )
 
 foreach(header "${rviz_dynamic_slam_plugins_headers_to_moc}")
@@ -84,6 +85,7 @@ endforeach()
 
 set(rviz_dynamic_slam_plugins_source_files
   src/object_odometry_display.cc
+  src/object_odometry_path_display.cc
 )
 
 add_library(rviz_dynamic_slam_plugins SHARED
