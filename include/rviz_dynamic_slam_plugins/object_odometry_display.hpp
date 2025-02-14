@@ -41,17 +41,14 @@ class CovarianceProperty;
 namespace rviz_dynamic_slam_plugins
 {
 
+using namespace dynamic_slam_interfaces::msg;
+
 class ObjectOdometryDisplay : public
   rviz_common::MessageFilterDisplay<dynamic_slam_interfaces::msg::ObjectOdometry>
 {
   Q_OBJECT
 
 public:
-  enum Shape
-  {
-    ArrowShape,
-    AxesShape,
-  };
 
 //   // TODO(Martin-Idel-SI): Constructor for testing, remove once ros_nodes can be mocked and call
 //   // initialize instead
@@ -77,102 +74,54 @@ protected:
 public Q_SLOTS:
   void updateCovariances();
 
+
 private Q_SLOTS:
-  void updateShowTrajectory();
   void updateShowVelocity();
-  void updateShowPoses();
   void updateShowObjectLabel();
-  void updatePathDiameter();
-  void updateTrajectoryStyle();
-  void updateTrajectoryBufferLength();
-  void updateShapeVisibility();
   void updateAxisGeometry();
 
 private:
-  void setupProperties();
-
-  // void updateArrow(const std::unique_ptr<rviz_rendering::Arrow> & arrow);
-
-  // void updateAxes(const std::unique_ptr<rviz_rendering::Axes> & axes);
-  void destroyTrajectoryObjects();
-  
-
-  struct ObjectMetaData {
-    //TODO: what if non adjacent temporal data?
-
-
-    //make temporal data struct internal
-
-    //currentrly scene node not being descroyed!! (should be detroyed from the scene manager!!)
-    Ogre::SceneNode* scene_node;
-    std::deque<std::unique_ptr<rviz_rendering::Axes>> axes_;
-    std::deque<std::unique_ptr<rviz_rendering::CovarianceVisual>> covariances_;
-
-    std::vector<Ogre::ManualObject *> manual_objects_;
-    std::vector<rviz_rendering::BillboardLine *> billboard_lines_;
-    rviz_rendering::MovableText* object_label_;
-
-    size_t messages_received_ = 0u;
-
-    void showOnlyFinalPose();
-  }; 
-
-  //! Contains all renderable rviz-objects for each dynamic object
-  std::map<int, ObjectMetaData> object_data_;
-
-  void addObjectData(
-    const Ogre::Vector3 & position, 
-    const Ogre::Quaternion & orientation,
-    dynamic_slam_interfaces::msg::ObjectOdometry::ConstSharedPtr msg);
-
-  // bool messageIsValid(nav_msgs::msg::Odometry::ConstSharedPtr message);
-
-  // bool messageIsSimilarToPrevious(nav_msgs::msg::Odometry::ConstSharedPtr message);
-
-
-  std::unique_ptr<rviz_rendering::Axes> createAndSetAxes(
-    const Ogre::Vector3 & position, const Ogre::Quaternion & orientation);
-
-  std::unique_ptr<rviz_rendering::CovarianceVisual> createAndSetCovarianceVisual(
-    const Ogre::Vector3 & position,
-    const Ogre::Quaternion & orientation,
-     dynamic_slam_interfaces::msg::ObjectOdometry::ConstSharedPtr message);
-
-  void clear();
-
-  enum LineStyle
-  {
-    LINES,
-    BILLBOARDS
-  };
-
-  //allocates without destroying (used for new objects and impl updateTrajectoryBufferLength)
-  void allocateTrajectoryBuffer(ObjectMetaData& object_meta_data, size_t buffer_length, LineStyle style);
-
-
-
-  // rviz_common::properties::EnumProperty * shape_property_;
-  rviz_common::properties::BoolProperty* show_trajectory_property_;
   rviz_common::properties::CovarianceProperty * show_covariance_property_;
   rviz_common::properties::BoolProperty* show_velocity_property_;
-  rviz_common::properties::BoolProperty* show_only_last_pose_property_;
+  rviz_common::properties::IntProperty * keep_property_;
+
 
   // object label propertires
   rviz_common::properties::BoolProperty* show_object_label_property_;
-  // rviz_common::properties::FloatProperty* object_label_z_offset_;
-
-   
-  // trajectoy (if shown) properties
-  rviz_common::properties::IntProperty * keep_property_;
-  rviz_common::properties::FloatProperty* path_diameter_property_;
-  rviz_common::properties::IntProperty * buffer_length_property_;
-  rviz_common::properties::EnumProperty * style_property_;
 
   //size of the pose axis
   rviz_common::properties::FloatProperty * axes_length_property_;
   rviz_common::properties::FloatProperty * axes_radius_property_;
-  rviz_common::properties::FloatProperty * position_tolerance_property_;
-  rviz_common::properties::FloatProperty * angle_tolerance_property_;
+
+  struct SingleDisplay {
+    Ogre::SceneNode* scene_node_;
+    Ogre::SceneManager* scene_manager_;
+    Ogre::SceneNode* object_label_scene_node_;
+
+    rviz_rendering::MovableText* object_label_;
+    std::deque<std::unique_ptr<rviz_rendering::Axes>> axes_;
+    std::deque<std::unique_ptr<rviz_rendering::CovarianceVisual>> covariances_;
+    rviz_common::properties::CovarianceProperty * show_covariance_property_;
+
+    void createAndAddAxes(
+      const Ogre::Vector3 & position, const Ogre::Quaternion & orientation,
+    float length, float radius);
+  
+    void createAndAddCovarianceVisual(
+      const Ogre::Vector3 & position,
+      const Ogre::Quaternion & orientation,
+      ObjectOdometry::ConstSharedPtr message);
+  
+
+  };
+
+  void clear();
+
+  SingleDisplay* getSingleDisplay(ObjectOdometry::ConstSharedPtr msg);
+
+  //object id to display
+  std::map<int, SingleDisplay> object_data_;
+
 
 };
 

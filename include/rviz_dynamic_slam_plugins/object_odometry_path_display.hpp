@@ -124,58 +124,13 @@ private:
     void allocateAxesVector(std::vector<rviz_rendering::Axes *> & axes_vect, size_t num);
   };
 
-  std::map<int, SingleDisplay> object_data_;
+  SingleDisplay* getSingleDisplay(const ObjectOdometryPath& msg);
 
+  //map of objects id/path segments to displays
+  std::map<std::pair<int, int>, SingleDisplay> object_data_;
 
-//   void destroyObjects();
-//   void allocateArrowVector(std::vector<rviz_rendering::Arrow *> & arrow_vect, size_t num);
-//   void allocateAxesVector(std::vector<rviz_rendering::Axes *> & axes_vect, size_t num);
-//   void destroyPoseAxesChain();
-//   void destroyPoseArrowChain();
-//   void updateManualObject(
-//     Ogre::ManualObject * manual_object, nav_msgs::msg::Path::ConstSharedPtr msg,
-//     const Ogre::Matrix4 & transform);
-//   void updateBillBoardLine(
-//     rviz_rendering::BillboardLine * billboard_line, nav_msgs::msg::Path::ConstSharedPtr msg,
-//     const Ogre::Matrix4 & transform);
-//   void updatePoseMarkers(
-//     size_t buffer_index, nav_msgs::msg::Path::ConstSharedPtr msg, const Ogre::Matrix4 & transform);
-//   void updateAxesMarkers(
-//     std::vector<rviz_rendering::Axes *> & axes_vect, nav_msgs::msg::Path::ConstSharedPtr msg,
-//     const Ogre::Matrix4 & transform);
-//   void updateArrowMarkers(
-//     std::vector<rviz_rendering::Arrow *> & arrow_vect, nav_msgs::msg::Path::ConstSharedPtr msg,
-//     const Ogre::Matrix4 & transform);
-
-//   // std::vector<Ogre::ManualObject *> manual_objects_;
-//   std::vector<rviz_rendering::BillboardLine *> billboard_lines_;
-//   std::vector<std::vector<rviz_rendering::Axes *>> axes_chain_;
-//   std::vector<std::vector<rviz_rendering::Arrow *>> arrow_chain_;
-//   Ogre::MaterialPtr lines_material_;
-
-//   rviz_common::properties::EnumProperty * style_property_;
-//   rviz_common::properties::ColorProperty * color_property_;
-//   rviz_common::properties::FloatProperty * alpha_property_;
-//   rviz_common::properties::FloatProperty * line_width_property_;
   rviz_common::properties::IntProperty * buffer_length_property_;
   PropertyStruct properties;
-//   rviz_common::properties::VectorProperty * offset_property_;
-
-//   enum LineStyle
-//   {
-//     LINES,
-//     BILLBOARDS
-//   };
-
-//   // pose marker property
-//   rviz_common::properties::EnumProperty * pose_style_property_;
-//   rviz_common::properties::FloatProperty * pose_axes_length_property_;
-//   rviz_common::properties::FloatProperty * pose_axes_radius_property_;
-//   rviz_common::properties::ColorProperty * pose_arrow_color_property_;
-//   rviz_common::properties::FloatProperty * pose_arrow_shaft_length_property_;
-//   rviz_common::properties::FloatProperty * pose_arrow_head_length_property_;
-//   rviz_common::properties::FloatProperty * pose_arrow_shaft_diameter_property_;
-//   rviz_common::properties::FloatProperty * pose_arrow_head_diameter_property_;
 
   enum PoseStyle
   {

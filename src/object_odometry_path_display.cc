@@ -16,7 +16,15 @@
 #include "rviz_common/properties/bool_property.hpp"
 #include "rviz_common/validate_floats.hpp"
 
-// #include "./quaternion_helper.hpp"
+template<>
+struct std::hash<std::pair<int,int>>{
+	size_t operator() (const std::pair<int,int>& p) const {
+		const auto h1 = std::hash<int>{}(p.first);
+    const auto h2 = std::hash<int>{}(p.second);
+    return h1 ^ (h2 << 1);
+	}
+};
+
 
 namespace rviz_dynamic_slam_plugins
 {
@@ -44,7 +52,8 @@ ObjectOdometryPathDisplay::ObjectOdometryPathDisplay()
     "Only works with the 'Billboards' style.",
     this, SLOT(updateLineWidth()), this);
   properties.line_width_property_->setMin(0.001f);
-  properties.line_width_property_->hide();
+  properties.line_width_property_->show();
+  
 
   properties.pose_style_property_ = new rviz_common::properties::EnumProperty(
     "Pose Style", "None",
@@ -111,50 +120,48 @@ void ObjectOdometryPathDisplay::reset()
   updateBufferLength();
 }
 
+ObjectOdometryPathDisplay::SingleDisplay* ObjectOdometryPathDisplay::getSingleDisplay(const ObjectOdometryPath& msg) {
+  auto buffer_length = static_cast<size_t>(buffer_length_property_->getInt());
+  SingleDisplay* display = nullptr;
 
+  const int object_id = static_cast<int>(msg.object_id);
+  const int path_segment = static_cast<int>(msg.path_segment);
+
+  auto pair = std::make_pair(object_id, path_segment);
+  if (object_data_.find(pair) == object_data_.end()) {
+    SingleDisplay object_display;
+    object_display.scene_node_ = scene_node_->createChildSceneNode();
+    object_display.scene_manager_ = scene_manager_;
+    object_display.pose_style_property_ = properties.pose_style_property_;
+    object_display.pose_axes_length_property_ = properties.pose_axes_length_property_;
+    object_display.pose_axes_radius_property_ = properties.pose_axes_radius_property_;
+    object_display.pose_arrow_shaft_length_property_ = properties.pose_arrow_shaft_length_property_;
+    object_display.pose_arrow_head_length_property_ = properties.pose_arrow_head_length_property_;
+    object_display.pose_arrow_shaft_diameter_property_ = properties.pose_arrow_shaft_diameter_property_;
+    object_display.pose_arrow_head_diameter_property_ = properties.pose_arrow_head_diameter_property_;
+    object_display.line_width_property_ = properties.line_width_property_;
+
+    object_display.updateBufferLength(buffer_length);
+    object_data_.emplace(pair, std::move(object_display));
+
+  }
+
+  display = &object_data_.at(pair);
+  assert (display != nullptr);
+  return display;
+
+}
 
 void ObjectOdometryPathDisplay::processMessage(dynamic_slam_interfaces::msg::MultiObjectOdometryPath::ConstSharedPtr msg)
 {
-  // // Calculate index of oldest element in cyclic buffer
+  // Calculate index of oldest element in cyclic buffer
   size_t bufferIndex = messages_received_ % buffer_length_property_->getInt();
-  auto buffer_length = static_cast<size_t>(buffer_length_property_->getInt());
-  std::cout << "Gotten msg " << std::endl;
 
   rviz_rendering::BillboardLine * billboard_line = nullptr;
   //create object per path
   for(const auto& path : msg->paths) {
 
-    SingleDisplay* display = nullptr;
-    const auto object_id = path.object_id;
-    if (object_data_.find(object_id) == object_data_.end()) {
-      std::cout << "making new object " << object_id << std::endl;
-
-      SingleDisplay object_display;
-      object_display.scene_node_ = scene_node_->createChildSceneNode();
-      object_display.scene_manager_ = scene_manager_;
-      object_display.pose_style_property_ = properties.pose_style_property_;
-      object_display.pose_axes_length_property_ = properties.pose_axes_length_property_;
-      object_display.pose_axes_radius_property_ = properties.pose_axes_radius_property_;
-      object_display.pose_arrow_shaft_length_property_ = properties.pose_arrow_shaft_length_property_;
-      object_display.pose_arrow_head_length_property_ = properties.pose_arrow_head_length_property_;
-      object_display.pose_arrow_shaft_diameter_property_ = properties.pose_arrow_shaft_diameter_property_;
-      object_display.pose_arrow_head_diameter_property_ = properties.pose_arrow_head_diameter_property_;
-      object_display.line_width_property_ = properties.line_width_property_;
-
-      object_display.updateBufferLength(buffer_length);
-
-
-      object_data_.emplace(object_id, std::move(object_display));
-
-    }
-
-    std::cout << "gotten new object " << object_id << std::endl;
-
-
-    display = &object_data_.at(object_id);
-    assert (display != nullptr);
-
-    std::cout << "gotten disp " << object_id << std::endl;
+    SingleDisplay* display = getSingleDisplay(path);
 
     Ogre::Vector3 position;
     Ogre::Quaternion orientation;
@@ -163,7 +170,6 @@ void ObjectOdometryPathDisplay::processMessage(dynamic_slam_interfaces::msg::Mul
       return;
     }
 
-    std::cout << "gotten position and orientation " << object_id << std::endl;
     setTransformOk();
 
     Ogre::Matrix4 transform(orientation);
@@ -173,12 +179,8 @@ void ObjectOdometryPathDisplay::processMessage(dynamic_slam_interfaces::msg::Mul
     assert (billboard_line != nullptr);
     billboard_line->clear();
 
-    std::cout << "gotten billboard_line " << object_id << std::endl;
-
     display->updateBillBoardLine(billboard_line, path, transform);
     display->updatePoseMarkers(bufferIndex, path, transform);
-
-    std::cout << "dome updaet " << object_id << std::endl;
 
   }
   context_->queueRender();
