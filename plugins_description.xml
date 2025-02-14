@@ -9,4 +9,15 @@
     </description>
     <message_type>dynamic_slam_interfaces/msg/ObjectOdometry</message_type>
   </class>
+
+  <class
+    name="rviz_dynamic_slam_plugins/ObjectOdometryPath"
+    type="rviz_dynamic_slam_plugins::ObjectOdometryPathDisplay"
+    base_class_type="rviz_common::Display"
+  >
+  <description>
+      Displays from dynamic_slam_interfaces/MultiObjectOdometryPath message
+    </description>
+    <message_type>dynamic_slam_interfaces/msg/MultiObjectOdometryPath</message_type>
+  </class>
 </library>
